@@ -1,5 +1,8 @@
 using System.Threading.Tasks;
 using DatingApp.API.Models;
+using System.Linq;
+using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace DatingApp.API.Data
 {
@@ -10,9 +13,17 @@ namespace DatingApp.API.Data
         {
             _context = context;
         }
-        public Task<User> Login(string username, string password)
+        public async Task<User> Login(string username, string password)
         {
+            var _user = await _context.Users.Where(c=> c.UserName.Equals(username)).FirstOrDefaultAsync();
+
+            if(_user == null)
                 return null;
+
+            if(!VerifyHash(password, _user.PasswordHash, _user.PasswordSalt))
+                return null;
+
+            return _user;
         }
 
         public async Task<User> Register(User user, string password)
@@ -31,9 +42,14 @@ namespace DatingApp.API.Data
             return user;
         }
 
-        public Task<bool> UserExists(string username)
+        public async Task<bool> UserExists(string username)
         {
-            return null;
+            var _userExists = await _context.Users.Where(c=> c.UserName.Equals(username)).FirstOrDefaultAsync();
+
+            if(_userExists == null)
+                return false;
+
+            return true;
         }
 
         private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
@@ -44,9 +60,22 @@ namespace DatingApp.API.Data
                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
 
             };  
-            
-
-                            
         }
+
+        private bool VerifyHash(string password, byte[] passwordHash, byte[] passwordSalt)
+        {
+            using (var hmac = new System.Security.Cryptography.HMACSHA512(passwordSalt))
+            {
+               var computerHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+
+               for (int i = 0; i < computerHash.Length; i++)
+               {
+                   if(computerHash[i] !=passwordHash [i]) return false;
+               } 
+
+               return true;
+            };
+        }
+
     }
 }
