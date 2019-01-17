@@ -52,7 +52,7 @@ namespace DatingApp.API
                 };
             });
         }
-
+        
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
@@ -78,8 +78,8 @@ namespace DatingApp.API
                 //app.UseHsts();
             }
 
-            //app.UseHttpsRedirection();
-            app.UseCors(c=> c.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            app.UseHttpsRedirection();
+            app.UseCors(c=> c.AllowAnyOrigin().AllowAnyMethod().WithOrigins("http://localhost:4200").AllowAnyHeader());
             app.UseAuthentication();
             app.UseMvc();
         }

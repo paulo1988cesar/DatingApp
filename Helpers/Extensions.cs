@@ -9,6 +9,7 @@ namespace DatingApp.API.Helpers
             response.Headers.Add("Application-error", message);
             response.Headers.Add("Access-Control-Expose-Headers", "Application-error");
             response.Headers.Add("Access-Control-Allow-Origin", "*");
+            response.Headers.Add("Access-Control-Allow-Methods", "*");
         }
     }
 }
