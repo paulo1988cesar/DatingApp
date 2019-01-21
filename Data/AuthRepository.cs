@@ -3,6 +3,7 @@ using DatingApp.API.Models;
 using System.Linq;
 using System;
 using Microsoft.EntityFrameworkCore;
+using DatingApp.API.Data.Interfaces;
 
 namespace DatingApp.API.Data
 {
