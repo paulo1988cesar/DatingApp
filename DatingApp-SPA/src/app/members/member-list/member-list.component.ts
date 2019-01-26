@@ -17,7 +17,6 @@ export class MemberListComponent implements OnInit {
 
   ngOnInit() {
     this.route.data.subscribe(data => {
-      this.alertify.warning('error');
       this.users = data['users'];
     });
   }
