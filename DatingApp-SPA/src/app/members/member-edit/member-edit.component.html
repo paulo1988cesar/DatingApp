@@ -12,7 +12,7 @@
     <div class="row">
       <div class= "col-sm-4">
         <div class="card">
-          <img class="card-img-top img-thumbnail" src="{{photoUrl}}">
+          <img class="card-img-top img-thumbnail" src="{{photoUrl || '../../../../../assets/user.png'}}">
           <div class="card-body">
             <div>
               <strong>Location:</strong>
@@ -24,7 +24,7 @@
             </div>
             <div>
               <strong>Last Active:</strong>
-              <p>{{user.lastActive | date:'dd-MM-yyyy'}}</p>
+              <p>{{user.lastActive | timeAgo}}</p>
             </div>
             <div>
               <strong>Gender:</strong>
@@ -32,7 +32,7 @@
             </div>
             <div>
               <strong>Member since:</strong>
-              <p>{{user.created | date:'dd-MM-yyyy'}}</p>
+              <p>{{user.created | date:'mediumDate'}}</p>
             </div>
           </div>
           <div class="card-footer">
