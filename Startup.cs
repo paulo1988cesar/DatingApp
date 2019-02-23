@@ -21,6 +21,10 @@ using Microsoft.AspNetCore.Http;
 using DatingApp.API.Helpers;
 using DatingApp.API.Data.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+using DatingApp.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace DatingApp.API
 {
@@ -38,17 +42,19 @@ namespace DatingApp.API
         {
             string conn = Configuration.GetConnectionString("DefaultConnection");
 
-            services.AddDbContext<DataContext>(x=> x.UseSqlServer(conn));
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddJsonOptions(opt =>
-            {
-                opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            IdentityBuilder builder = services.AddIdentityCore<User>(opt => {
+                opt.Password.RequireDigit = false;
+                opt.Password.RequiredLength = 4;
+                opt.Password.RequireNonAlphanumeric = false;
+                opt.Password.RequireUppercase = false;
             });
-            services.AddCors();
-            services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
-            //services.AddTransient<Seed>();
-            services.AddAutoMapper();
-            services.AddScoped<IAuthRepository, AuthRepository>();
-            services.AddScoped<IDatingRepository, DatingRepository>();
+
+            builder = new IdentityBuilder(builder.UserType, typeof(Role), builder.Services);
+            builder.AddEntityFrameworkStores<DataContext>();
+            builder.AddRoleValidator<RoleValidator<Role>>();
+            builder.AddRoleManager<RoleManager<Role>>();
+            builder.AddSignInManager<SignInManager<User>>();
+            
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options => {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -60,11 +66,36 @@ namespace DatingApp.API
                     ValidateAudience = false
                 };
             });
+
+            services.AddAuthorization(options => 
+            {
+                options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("ModeratePhotoRole", policy => policy.RequireRole("Admin", "Moderator"));
+                options.AddPolicy("VipOnle", policy => policy.RequireRole("VIP"));
+            });
+
+            services.AddDbContext<DataContext>(x=> x.UseSqlServer(conn));
+            services.AddMvc(options => {
+                var policy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+                options.Filters.Add(new AuthorizeFilter(policy));
+            }).SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddJsonOptions(opt =>
+            {
+                opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            });
+            services.AddCors();
+            services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
+            services.AddTransient<Seed>();
+            Mapper.Reset();
+            services.AddAutoMapper();
+            services.AddScoped<IDatingRepository, DatingRepository>();
+           
             services.AddScoped<LogUserActivity>();
         }
         
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env) //, Seed seed)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, Seed seed)
         {
             if (env.IsDevelopment())
             {
@@ -88,7 +119,7 @@ namespace DatingApp.API
                 //app.UseHsts();
             }
 
-            //seed.SeedUsers();
+            seed.SeedUsers();
             app.UseHttpsRedirection();
             app.UseCors(c=> c.AllowAnyOrigin().AllowAnyMethod().WithOrigins("http://localhost:4200").AllowAnyHeader());
             app.UseAuthentication();
